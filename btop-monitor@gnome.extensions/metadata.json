@@ -1,0 +1,9 @@
+{
+    "name": "Btop Monitor",
+    "description": "Display system resource usage (CPU, Memory, etc.) in the top bar with color-coded indicators. Click to open btop in a terminal.",
+    "uuid": "btop-monitor@gnome.extensions",
+    "version": 1,
+    "shell-version": ["45", "46", "47"],
+    "settings-schema": "org.gnome.shell.extensions.btop-monitor",
+    "url": "https://github.com/fonnesbeck/gnome-btop-monitor"
+}
