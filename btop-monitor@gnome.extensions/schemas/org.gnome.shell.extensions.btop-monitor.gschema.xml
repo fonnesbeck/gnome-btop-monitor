@@ -27,9 +27,9 @@
     </key>
 
     <key name="terminal-command" type="s">
-      <default>'gnome-terminal -- %c'</default>
+      <default>'auto'</default>
       <summary>Terminal Command</summary>
-      <description>Command to launch terminal. Use %c as placeholder for the btop command.</description>
+      <description>Command to launch terminal. Use %c as placeholder for the btop command. Set to 'auto' for automatic detection.</description>
     </key>
 
     <key name="btop-command" type="s">

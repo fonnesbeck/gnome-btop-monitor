@@ -16,6 +16,19 @@ const MonitorType = {
     LOAD: 'load',
 };
 
+// Terminal detection order (first found wins)
+const TERMINAL_COMMANDS = [
+    ['ptyxis', 'ptyxis -e %c'],
+    ['ghostty', 'ghostty -e %c'],
+    ['kgx', 'kgx -e %c'],
+    ['gnome-terminal', 'gnome-terminal -- %c'],
+    ['kitty', 'kitty %c'],
+    ['alacritty', 'alacritty -e %c'],
+    ['konsole', 'konsole -e %c'],
+    ['terminator', 'terminator -e %c'],
+    ['xterm', 'xterm -e %c'],
+];
+
 class SystemMonitor {
     constructor() {
         this._lastCpuData = null;
@@ -274,12 +287,32 @@ class BtopIndicator extends PanelMenu.Button {
         this._updateColor((loadValue / 4) * 100);
     }
 
+    _detectTerminal() {
+        // Try to find an available terminal
+        for (const [binary, command] of TERMINAL_COMMANDS) {
+            const path = GLib.find_program_in_path(binary);
+            if (path) {
+                return command;
+            }
+        }
+        return null;
+    }
+
     _onClick(actor, event) {
         // Only respond to left click
         if (event.get_button() !== 1) return Clutter.EVENT_PROPAGATE;
 
-        const terminal = this._settings.get_string('terminal-command');
+        let terminal = this._settings.get_string('terminal-command');
         const btopCommand = this._settings.get_string('btop-command');
+
+        // Handle auto-detection
+        if (terminal === 'auto') {
+            terminal = this._detectTerminal();
+            if (!terminal) {
+                Main.notifyError(_('Btop Monitor'), _('No terminal emulator found. Please install one or select manually in settings.'));
+                return Clutter.EVENT_STOP;
+            }
+        }
 
         try {
             // Try to spawn the terminal with btop
