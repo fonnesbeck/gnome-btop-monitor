@@ -4,8 +4,14 @@
 
     <key name="monitor-type" type="s">
       <default>'cpu'</default>
-      <summary>Monitor Type</summary>
-      <description>The type of system resource to monitor (cpu, memory, swap, load)</description>
+      <summary>Monitor Type (deprecated)</summary>
+      <description>Legacy setting - use monitor-types instead</description>
+    </key>
+
+    <key name="monitor-types" type="as">
+      <default>['cpu']</default>
+      <summary>Monitor Types</summary>
+      <description>List of system resources to monitor (cpu, memory, swap, net)</description>
     </key>
 
     <key name="refresh-rate" type="i">
@@ -50,7 +56,7 @@
       <description>Index within the panel position (0 = leftmost for that section)</description>
     </key>
 
-    <key name="use-emoji" type="b">
+    <key name="use-icon" type="b">
       <default>false</default>
       <summary>Use Icon</summary>
       <description>Use symbolic icon instead of text for the monitor label</description>
