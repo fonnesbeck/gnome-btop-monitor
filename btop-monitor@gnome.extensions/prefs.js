@@ -336,10 +336,9 @@ export default class BtopMonitorPreferences extends ExtensionPreferences {
     page.add(noteGroup);
 
     const noteRow = new Adw.ActionRow({
-      title: _(
+      subtitle: _(
         "Note: Panel position changes require disabling and re-enabling the extension.",
       ),
-      css_classes: ["dim-label"],
     });
     noteGroup.add(noteRow);
   }

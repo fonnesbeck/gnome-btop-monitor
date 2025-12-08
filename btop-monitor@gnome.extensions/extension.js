@@ -36,17 +36,28 @@ const ICON_NAMES = {
   net: "network-wired-symbolic",
 };
 
-// Format bytes per second to human readable
+// Format bytes per second to human readable with fixed width
 function formatSpeed(bytesPerSec) {
+  let num;
+  let unit;
+
   if (bytesPerSec < 1024) {
-    return `${Math.round(bytesPerSec)}B`;
+    num = Math.round(bytesPerSec).toString();
+    unit = "B";
   } else if (bytesPerSec < 1024 * 1024) {
-    return `${(bytesPerSec / 1024).toFixed(1)}K`;
+    num = (bytesPerSec / 1024).toFixed(1);
+    unit = "K";
   } else if (bytesPerSec < 1024 * 1024 * 1024) {
-    return `${(bytesPerSec / (1024 * 1024)).toFixed(1)}M`;
+    num = (bytesPerSec / (1024 * 1024)).toFixed(1);
+    unit = "M";
   } else {
-    return `${(bytesPerSec / (1024 * 1024 * 1024)).toFixed(1)}G`;
+    num = (bytesPerSec / (1024 * 1024 * 1024)).toFixed(1);
+    unit = "G";
   }
+
+  // Pad to fixed width: 5 chars for number + 1 for unit = 6 total
+  // Examples: "  0.0B", "123.4K", "999.9M"
+  return num.padStart(5) + unit;
 }
 
 // Terminal detection order (first found wins)
@@ -246,6 +257,7 @@ class BtopIndicator extends PanelMenu.Button {
     // Create a box to hold all monitor items
     this._box = new St.BoxLayout({
       style_class: "panel-status-menu-box",
+      spacing: 8,
     });
     this.add_child(this._box);
 
@@ -287,17 +299,7 @@ class BtopIndicator extends PanelMenu.Button {
     const monitorTypes = this._getMonitorTypes();
     const useIcon = this._settings.get_boolean("use-icon");
 
-    monitorTypes.forEach((monitorType, index) => {
-      // Add separator between monitors
-      if (index > 0) {
-        const separator = new St.Label({
-          text: " ",
-          y_align: Clutter.ActorAlign.CENTER,
-          style_class: "btop-monitor-separator",
-        });
-        this._box.add_child(separator);
-      }
-
+    monitorTypes.forEach((monitorType) => {
       // Create container for this monitor (icon + value tightly packed)
       const monitorBox = new St.BoxLayout({
         style_class: "btop-monitor-item",
