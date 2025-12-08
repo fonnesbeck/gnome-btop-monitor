@@ -27,9 +27,9 @@
     </key>
 
     <key name="terminal-command" type="s">
-      <default>'gnome-terminal -- %c'</default>
+      <default>'auto'</default>
       <summary>Terminal Command</summary>
-      <description>Command to launch terminal. Use %c as placeholder for the btop command.</description>
+      <description>Command to launch terminal. Use %c as placeholder for the btop command. Set to 'auto' for automatic detection.</description>
     </key>
 
     <key name="btop-command" type="s">
@@ -48,6 +48,12 @@
       <default>0</default>
       <summary>Panel Index</summary>
       <description>Index within the panel position (0 = leftmost for that section)</description>
+    </key>
+
+    <key name="use-emoji" type="b">
+      <default>false</default>
+      <summary>Use Icon</summary>
+      <description>Use symbolic icon instead of text for the monitor label</description>
     </key>
 
   </schema>

@@ -16,6 +16,35 @@ const MonitorType = {
     LOAD: 'load',
 };
 
+// Labels for monitor types
+const TEXT_LABELS = {
+    cpu: 'CPU',
+    memory: 'MEM',
+    swap: 'SWAP',
+    load: 'LOAD',
+};
+
+// Symbolic icon names for monitor types
+const ICON_NAMES = {
+    cpu: 'cpu-symbolic',
+    memory: 'memory-symbolic',
+    swap: 'drive-harddisk-symbolic',
+    load: 'utilities-system-monitor-symbolic',
+};
+
+// Terminal detection order (first found wins)
+const TERMINAL_COMMANDS = [
+    ['ptyxis', 'ptyxis -e %c'],
+    ['ghostty', 'ghostty -e %c'],
+    ['kgx', 'kgx -e %c'],
+    ['gnome-terminal', 'gnome-terminal -- %c'],
+    ['kitty', 'kitty %c'],
+    ['alacritty', 'alacritty -e %c'],
+    ['konsole', 'konsole -e %c'],
+    ['terminator', 'terminator -e %c'],
+    ['xterm', 'xterm -e %c'],
+];
+
 class SystemMonitor {
     constructor() {
         this._lastCpuData = null;
@@ -152,6 +181,18 @@ class BtopIndicator extends PanelMenu.Button {
         this._monitor = new SystemMonitor();
         this._updateTimer = null;
 
+        // Create a box to hold icon and label
+        this._box = new St.BoxLayout({
+            style_class: 'panel-status-menu-box',
+        });
+
+        // Create the icon (hidden by default, shown when use-icon is enabled)
+        this._icon = new St.Icon({
+            icon_name: 'cpu-symbolic',
+            style_class: 'system-status-icon',
+        });
+        this._icon.visible = false;
+
         // Create the label for the top bar
         this._label = new St.Label({
             text: 'CPU --%',
@@ -159,7 +200,9 @@ class BtopIndicator extends PanelMenu.Button {
             style_class: 'btop-monitor-label',
         });
 
-        this.add_child(this._label);
+        this._box.add_child(this._icon);
+        this._box.add_child(this._label);
+        this.add_child(this._box);
 
         // Connect click handler
         this.connect('button-press-event', this._onClick.bind(this));
@@ -192,45 +235,51 @@ class BtopIndicator extends PanelMenu.Button {
 
     _updateDisplay() {
         const monitorType = this._settings.get_string('monitor-type');
+        const useIcon = this._settings.get_boolean('use-emoji');
         let value = null;
-        let label = '';
         let isPercentage = true;
 
         switch (monitorType) {
             case MonitorType.CPU:
                 value = this._monitor.getCpuUsage();
-                label = 'CPU';
                 break;
             case MonitorType.MEMORY:
                 value = this._monitor.getMemoryUsage();
-                label = 'MEM';
                 break;
             case MonitorType.SWAP:
                 value = this._monitor.getSwapUsage();
-                label = 'SWAP';
                 break;
             case MonitorType.LOAD:
                 value = this._monitor.getLoadAverage();
-                label = 'LOAD';
                 isPercentage = false;
                 break;
             default:
                 value = this._monitor.getCpuUsage();
-                label = 'CPU';
         }
 
-        // Update text
+        const labelType = monitorType || 'cpu';
+
+        // Show icon or text label based on setting
+        if (useIcon) {
+            this._icon.icon_name = ICON_NAMES[labelType];
+            this._icon.visible = true;
+        } else {
+            this._icon.visible = false;
+        }
+
+        // Update the value text
+        const prefix = useIcon ? '' : `${TEXT_LABELS[labelType]} `;
         if (value !== null) {
             if (isPercentage) {
-                this._label.text = `${label} ${value}%`;
+                this._label.text = `${prefix}${value}%`;
                 this._updateColor(value);
             } else {
-                this._label.text = `${label} ${value}`;
+                this._label.text = `${prefix}${value}`;
                 // For load average, compare against number of CPUs
                 this._updateColorForLoad(parseFloat(value));
             }
         } else {
-            this._label.text = `${label} --%`;
+            this._label.text = `${prefix}--%`;
             this._label.style_class = 'btop-monitor-label';
         }
     }
@@ -274,12 +323,32 @@ class BtopIndicator extends PanelMenu.Button {
         this._updateColor((loadValue / 4) * 100);
     }
 
+    _detectTerminal() {
+        // Try to find an available terminal
+        for (const [binary, command] of TERMINAL_COMMANDS) {
+            const path = GLib.find_program_in_path(binary);
+            if (path) {
+                return command;
+            }
+        }
+        return null;
+    }
+
     _onClick(actor, event) {
         // Only respond to left click
         if (event.get_button() !== 1) return Clutter.EVENT_PROPAGATE;
 
-        const terminal = this._settings.get_string('terminal-command');
+        let terminal = this._settings.get_string('terminal-command');
         const btopCommand = this._settings.get_string('btop-command');
+
+        // Handle auto-detection
+        if (terminal === 'auto') {
+            terminal = this._detectTerminal();
+            if (!terminal) {
+                Main.notifyError(_('Btop Monitor'), _('No terminal emulator found. Please install one or select manually in settings.'));
+                return Clutter.EVENT_STOP;
+            }
+        }
 
         try {
             // Try to spawn the terminal with btop

@@ -1,8 +1,24 @@
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+
+// Terminal configurations: [name, command-template]
+const TERMINALS = [
+    ['Auto-detect', 'auto'],
+    ['GNOME Console (ptyxis)', 'ptyxis -e %c'],
+    ['GNOME Console (kgx)', 'kgx -e %c'],
+    ['GNOME Terminal', 'gnome-terminal -- %c'],
+    ['Ghostty', 'ghostty -e %c'],
+    ['Kitty', 'kitty %c'],
+    ['Alacritty', 'alacritty -e %c'],
+    ['Konsole', 'konsole -e %c'],
+    ['Terminator', 'terminator -e %c'],
+    ['xterm', 'xterm -e %c'],
+    ['Custom...', 'custom'],
+];
 
 export default class BtopMonitorPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -60,6 +76,20 @@ export default class BtopMonitorPreferences extends ExtensionPreferences {
         settings.bind('refresh-rate', refreshRow, 'value', Gio.SettingsBindFlags.DEFAULT);
         monitorGroup.add(refreshRow);
 
+        // Use Icon Toggle
+        const iconSwitch = new Gtk.Switch({
+            active: settings.get_boolean('use-emoji'),
+            valign: Gtk.Align.CENTER,
+        });
+        const iconRow = new Adw.ActionRow({
+            title: _('Use Icon'),
+            subtitle: _('Show symbolic icon instead of text label'),
+        });
+        iconRow.add_suffix(iconSwitch);
+        iconRow.activatable_widget = iconSwitch;
+        settings.bind('use-emoji', iconSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+        monitorGroup.add(iconRow);
+
         // Thresholds Group
         const thresholdsGroup = new Adw.PreferencesGroup({
             title: _('Color Thresholds'),
@@ -104,27 +134,65 @@ export default class BtopMonitorPreferences extends ExtensionPreferences {
         });
         page.add(terminalGroup);
 
-        // Terminal Command
-        const terminalRow = new Adw.EntryRow({
-            title: _('Terminal Command'),
-            text: settings.get_string('terminal-command'),
-        });
-        terminalRow.connect('changed', () => {
-            settings.set_string('terminal-command', terminalRow.text);
+        // Terminal Selector
+        const terminalRow = new Adw.ComboRow({
+            title: _('Terminal'),
+            subtitle: _('Select your preferred terminal emulator'),
         });
 
-        // Add helper text
-        const terminalHelperLabel = new Gtk.Label({
-            label: _('Use %c as placeholder for btop command.\nExamples: gnome-terminal -- %c, kitty %c, alacritty -e %c'),
+        const terminalList = new Gtk.StringList();
+        TERMINALS.forEach(([name, _cmd]) => terminalList.append(name));
+        terminalRow.model = terminalList;
+
+        // Custom command entry (shown when "Custom..." is selected)
+        const customCommandRow = new Adw.EntryRow({
+            title: _('Custom Command'),
+            text: settings.get_string('terminal-command'),
+        });
+
+        // Find current terminal in list or set to custom
+        const currentCommand = settings.get_string('terminal-command');
+        let selectedIndex = TERMINALS.findIndex(([_name, cmd]) => cmd === currentCommand);
+        if (selectedIndex === -1) {
+            // Current command is custom
+            selectedIndex = TERMINALS.length - 1; // "Custom..." option
+        }
+        terminalRow.selected = selectedIndex;
+
+        // Show/hide custom entry based on selection
+        const updateCustomVisibility = () => {
+            const isCustom = terminalRow.selected === TERMINALS.length - 1;
+            customCommandRow.visible = isCustom;
+        };
+        updateCustomVisibility();
+
+        terminalRow.connect('notify::selected', () => {
+            const [_name, cmd] = TERMINALS[terminalRow.selected];
+            if (cmd !== 'custom') {
+                settings.set_string('terminal-command', cmd);
+            }
+            updateCustomVisibility();
+        });
+
+        customCommandRow.connect('changed', () => {
+            if (terminalRow.selected === TERMINALS.length - 1) {
+                settings.set_string('terminal-command', customCommandRow.text);
+            }
+        });
+
+        terminalGroup.add(terminalRow);
+        terminalGroup.add(customCommandRow);
+
+        // Help text for custom command
+        const helpLabel = new Gtk.Label({
+            label: _('Use %c as placeholder for the btop command'),
             wrap: true,
             xalign: 0,
             css_classes: ['dim-label'],
             margin_start: 12,
-            margin_end: 12,
-            margin_bottom: 6,
+            margin_top: 6,
         });
-
-        terminalGroup.add(terminalRow);
+        terminalGroup.add(helpLabel);
 
         // Btop Command
         const btopRow = new Adw.EntryRow({
