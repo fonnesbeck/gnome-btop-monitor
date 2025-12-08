@@ -76,6 +76,14 @@ export default class BtopMonitorPreferences extends ExtensionPreferences {
         settings.bind('refresh-rate', refreshRow, 'value', Gio.SettingsBindFlags.DEFAULT);
         monitorGroup.add(refreshRow);
 
+        // Use Emoji Toggle
+        const emojiRow = new Adw.SwitchRow({
+            title: _('Use Emoji Labels'),
+            subtitle: _('Show emoji instead of text (e.g. 🖥️ instead of CPU)'),
+        });
+        settings.bind('use-emoji', emojiRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        monitorGroup.add(emojiRow);
+
         // Thresholds Group
         const thresholdsGroup = new Adw.PreferencesGroup({
             title: _('Color Thresholds'),

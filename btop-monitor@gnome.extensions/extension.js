@@ -16,6 +16,21 @@ const MonitorType = {
     LOAD: 'load',
 };
 
+// Labels for monitor types
+const TEXT_LABELS = {
+    cpu: 'CPU',
+    memory: 'MEM',
+    swap: 'SWAP',
+    load: 'LOAD',
+};
+
+const EMOJI_LABELS = {
+    cpu: '\u{1F5A5}',      // 🖥️ Desktop Computer
+    memory: '\u{1F9E0}',   // 🧠 Brain
+    swap: '\u{1F4BE}',     // 💾 Floppy Disk
+    load: '\u{26A1}',      // ⚡ High Voltage
+};
+
 // Terminal detection order (first found wins)
 const TERMINAL_COMMANDS = [
     ['ptyxis', 'ptyxis -e %c'],
@@ -205,32 +220,31 @@ class BtopIndicator extends PanelMenu.Button {
 
     _updateDisplay() {
         const monitorType = this._settings.get_string('monitor-type');
+        const useEmoji = this._settings.get_boolean('use-emoji');
         let value = null;
-        let label = '';
         let isPercentage = true;
 
         switch (monitorType) {
             case MonitorType.CPU:
                 value = this._monitor.getCpuUsage();
-                label = 'CPU';
                 break;
             case MonitorType.MEMORY:
                 value = this._monitor.getMemoryUsage();
-                label = 'MEM';
                 break;
             case MonitorType.SWAP:
                 value = this._monitor.getSwapUsage();
-                label = 'SWAP';
                 break;
             case MonitorType.LOAD:
                 value = this._monitor.getLoadAverage();
-                label = 'LOAD';
                 isPercentage = false;
                 break;
             default:
                 value = this._monitor.getCpuUsage();
-                label = 'CPU';
         }
+
+        // Get the appropriate label
+        const labelType = monitorType || 'cpu';
+        const label = useEmoji ? EMOJI_LABELS[labelType] : TEXT_LABELS[labelType];
 
         // Update text
         if (value !== null) {

@@ -50,5 +50,11 @@
       <description>Index within the panel position (0 = leftmost for that section)</description>
     </key>
 
+    <key name="use-emoji" type="b">
+      <default>false</default>
+      <summary>Use Emoji Labels</summary>
+      <description>Use emoji instead of text for the monitor label (e.g. 🖥️ instead of CPU)</description>
+    </key>
+
   </schema>
 </schemalist>
