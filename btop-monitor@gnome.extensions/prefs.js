@@ -77,11 +77,17 @@ export default class BtopMonitorPreferences extends ExtensionPreferences {
         monitorGroup.add(refreshRow);
 
         // Use Icon Toggle
-        const iconRow = new Adw.SwitchRow({
+        const iconSwitch = new Gtk.Switch({
+            active: settings.get_boolean('use-emoji'),
+            valign: Gtk.Align.CENTER,
+        });
+        const iconRow = new Adw.ActionRow({
             title: _('Use Icon'),
             subtitle: _('Show symbolic icon instead of text label'),
         });
-        settings.bind('use-emoji', iconRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        iconRow.add_suffix(iconSwitch);
+        iconRow.activatable_widget = iconSwitch;
+        settings.bind('use-emoji', iconSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
         monitorGroup.add(iconRow);
 
         // Thresholds Group
