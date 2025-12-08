@@ -1,10 +1,25 @@
 /* Btop Monitor Styles */
 
+/* Container for each monitor item (icon + value) */
+.btop-monitor-item {
+    spacing: 2px;
+}
+
+/* Icon styling - smaller and closer to value */
+.btop-monitor-icon {
+    icon-size: 14px;
+    margin-right: 2px;
+}
+
 /* Base label style */
 .btop-monitor-label {
     font-weight: bold;
-    padding-left: 8px;
-    padding-right: 8px;
+}
+
+/* Separator between multiple monitors */
+.btop-monitor-separator {
+    margin-left: 4px;
+    margin-right: 4px;
 }
 
 /* Normal usage - default text color */
