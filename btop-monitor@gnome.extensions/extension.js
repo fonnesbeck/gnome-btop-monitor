@@ -256,8 +256,7 @@ class BtopIndicator extends PanelMenu.Button {
 
     // Create a box to hold all monitor items
     this._box = new St.BoxLayout({
-      style_class: "panel-status-menu-box",
-      spacing: 8,
+      style_class: "panel-status-menu-box btop-monitor-box",
     });
     this.add_child(this._box);
 
@@ -312,11 +311,22 @@ class BtopIndicator extends PanelMenu.Button {
       });
       icon.visible = useIcon;
 
-      // Create label for value
+      // Create label for value with FIXED width to prevent panel shifting
+      const isNetwork = monitorType === MonitorType.NET;
+      // Fixed pixel widths based on monitor type and icon mode
+      // These must be wide enough for max content: "100%" or "NET 100%" / network speeds
+      let fixedWidth;
+      if (isNetwork) {
+        fixedWidth = useIcon ? 140 : 180;
+      } else {
+        fixedWidth = useIcon ? 50 : 80;
+      }
       const label = new St.Label({
         text: this._getInitialText(monitorType, useIcon),
         y_align: Clutter.ActorAlign.CENTER,
         style_class: "btop-monitor-label",
+        // Enforce exact width via inline style - this CANNOT be overridden
+        style: `width: ${fixedWidth}px; min-width: ${fixedWidth}px; max-width: ${fixedWidth}px; text-align: left;`,
       });
 
       monitorBox.add_child(icon);
@@ -330,7 +340,7 @@ class BtopIndicator extends PanelMenu.Button {
   _getInitialText(monitorType, useIcon) {
     const prefix = useIcon ? "" : `${TEXT_LABELS[monitorType] || "CPU"} `;
     if (monitorType === MonitorType.NET) {
-      return `${prefix}↑-- ↓--`;
+      return `${prefix}--↑ --↓`;
     }
     return `${prefix}--%`;
   }
@@ -363,7 +373,7 @@ class BtopIndicator extends PanelMenu.Button {
 
     for (const [monitorType, widgets] of this._monitorWidgets) {
       let value = null;
-      let isNetwork = false;
+      const isNetwork = monitorType === MonitorType.NET;
 
       switch (monitorType) {
         case MonitorType.CPU:
@@ -377,7 +387,6 @@ class BtopIndicator extends PanelMenu.Button {
           break;
         case MonitorType.NET:
           value = this._monitor.getNetworkUsage();
-          isNetwork = true;
           break;
         default:
           value = this._monitor.getCpuUsage();
@@ -386,13 +395,13 @@ class BtopIndicator extends PanelMenu.Button {
       // Update icon visibility
       widgets.icon.visible = useIcon;
 
-      // Update the value text
+      // Update the value text - width is fixed via inline style
       const prefix = useIcon ? "" : `${TEXT_LABELS[monitorType]} `;
       if (value !== null) {
         if (isNetwork) {
           const upStr = formatSpeed(value.tx);
           const downStr = formatSpeed(value.rx);
-          widgets.label.text = `${prefix}↑${upStr} ↓${downStr}`;
+          widgets.label.text = `${prefix}${upStr}↑ ${downStr}↓`;
           // Use combined rate for color (arbitrary threshold in MB/s)
           const combinedMbps = (value.rx + value.tx) / (1024 * 1024);
           this._updateColorForNetwork(widgets.label, combinedMbps);
@@ -402,11 +411,14 @@ class BtopIndicator extends PanelMenu.Button {
         }
       } else {
         if (isNetwork) {
-          widgets.label.text = `${prefix}↑-- ↓--`;
+          widgets.label.text = `${prefix}--↑ --↓`;
         } else {
           widgets.label.text = `${prefix}--%`;
         }
-        widgets.label.style_class = "btop-monitor-label";
+        // Remove color classes when no data
+        widgets.label.remove_style_class_name("btop-monitor-normal");
+        widgets.label.remove_style_class_name("btop-monitor-warning");
+        widgets.label.remove_style_class_name("btop-monitor-critical");
       }
     }
   }

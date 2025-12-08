@@ -1,25 +1,24 @@
 /* Btop Monitor Styles */
 
+/* Main container for all monitors */
+.btop-monitor-box {
+    spacing: 12px;
+}
+
 /* Container for each monitor item (icon + value) */
 .btop-monitor-item {
-    spacing: 2px;
+    spacing: 4px;
 }
 
-/* Icon styling - smaller and closer to value */
+/* Icon styling */
 .btop-monitor-icon {
     icon-size: 14px;
-    margin-right: 2px;
 }
 
-/* Base label style */
+/* Base label style - left-aligned text within fixed-width label */
 .btop-monitor-label {
     font-weight: bold;
-}
-
-/* Separator between multiple monitors */
-.btop-monitor-separator {
-    margin-left: 4px;
-    margin-right: 4px;
+    text-align: left;
 }
 
 /* Normal usage - default text color */
@@ -35,15 +34,4 @@
 /* Heavy usage - red critical */
 .btop-monitor-critical {
     color: #e74c3c;
-}
-
-/* Hover effect */
-.btop-monitor-label:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-/* Active/pressed state */
-.btop-monitor-label:active {
-    background-color: rgba(255, 255, 255, 0.2);
 }
