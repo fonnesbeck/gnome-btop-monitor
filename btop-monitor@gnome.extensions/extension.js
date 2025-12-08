@@ -24,11 +24,12 @@ const TEXT_LABELS = {
     load: 'LOAD',
 };
 
-const EMOJI_LABELS = {
-    cpu: '\u{1F5A5}',      // 🖥️ Desktop Computer
-    memory: '\u{1F9E0}',   // 🧠 Brain
-    swap: '\u{1F4BE}',     // 💾 Floppy Disk
-    load: '\u{26A1}',      // ⚡ High Voltage
+// Symbolic icon names for monitor types
+const ICON_NAMES = {
+    cpu: 'cpu-symbolic',
+    memory: 'memory-symbolic',
+    swap: 'drive-harddisk-symbolic',
+    load: 'utilities-system-monitor-symbolic',
 };
 
 // Terminal detection order (first found wins)
@@ -180,6 +181,18 @@ class BtopIndicator extends PanelMenu.Button {
         this._monitor = new SystemMonitor();
         this._updateTimer = null;
 
+        // Create a box to hold icon and label
+        this._box = new St.BoxLayout({
+            style_class: 'panel-status-menu-box',
+        });
+
+        // Create the icon (hidden by default, shown when use-icon is enabled)
+        this._icon = new St.Icon({
+            icon_name: 'cpu-symbolic',
+            style_class: 'system-status-icon',
+        });
+        this._icon.visible = false;
+
         // Create the label for the top bar
         this._label = new St.Label({
             text: 'CPU --%',
@@ -187,7 +200,9 @@ class BtopIndicator extends PanelMenu.Button {
             style_class: 'btop-monitor-label',
         });
 
-        this.add_child(this._label);
+        this._box.add_child(this._icon);
+        this._box.add_child(this._label);
+        this.add_child(this._box);
 
         // Connect click handler
         this.connect('button-press-event', this._onClick.bind(this));
@@ -220,7 +235,7 @@ class BtopIndicator extends PanelMenu.Button {
 
     _updateDisplay() {
         const monitorType = this._settings.get_string('monitor-type');
-        const useEmoji = this._settings.get_boolean('use-emoji');
+        const useIcon = this._settings.get_boolean('use-emoji');
         let value = null;
         let isPercentage = true;
 
@@ -242,22 +257,29 @@ class BtopIndicator extends PanelMenu.Button {
                 value = this._monitor.getCpuUsage();
         }
 
-        // Get the appropriate label
         const labelType = monitorType || 'cpu';
-        const label = useEmoji ? EMOJI_LABELS[labelType] : TEXT_LABELS[labelType];
 
-        // Update text
+        // Show icon or text label based on setting
+        if (useIcon) {
+            this._icon.icon_name = ICON_NAMES[labelType];
+            this._icon.visible = true;
+        } else {
+            this._icon.visible = false;
+        }
+
+        // Update the value text
+        const prefix = useIcon ? '' : `${TEXT_LABELS[labelType]} `;
         if (value !== null) {
             if (isPercentage) {
-                this._label.text = `${label} ${value}%`;
+                this._label.text = `${prefix}${value}%`;
                 this._updateColor(value);
             } else {
-                this._label.text = `${label} ${value}`;
+                this._label.text = `${prefix}${value}`;
                 // For load average, compare against number of CPUs
                 this._updateColorForLoad(parseFloat(value));
             }
         } else {
-            this._label.text = `${label} --%`;
+            this._label.text = `${prefix}--%`;
             this._label.style_class = 'btop-monitor-label';
         }
     }
