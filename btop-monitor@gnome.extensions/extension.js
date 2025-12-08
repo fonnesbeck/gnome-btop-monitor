@@ -26,10 +26,10 @@ const TEXT_LABELS = {
 
 // Symbolic icon names for monitor types
 const ICON_NAMES = {
-    cpu: 'cpu-symbolic',
-    memory: 'memory-symbolic',
-    swap: 'drive-harddisk-symbolic',
-    load: 'utilities-system-monitor-symbolic',
+    cpu: 'org.gnome.SystemMonitor-symbolic',
+    memory: 'drive-harddisk-symbolic',
+    swap: 'media-floppy-symbolic',
+    load: 'display-brightness-symbolic',
 };
 
 // Terminal detection order (first found wins)
