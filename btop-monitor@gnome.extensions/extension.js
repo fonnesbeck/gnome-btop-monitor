@@ -479,6 +479,8 @@ class BtopIndicator extends PanelMenu.Button {
         this._tooltip = null;
         this._tooltipShowTimeout = null;
         this._tooltipHideTimeout = null;
+        this._tooltipUpdateTimer = null;
+        this._tooltipValueWidgets = {}; // Store references for live updates
 
         // Create a box to hold all monitor items
         this._box = new St.BoxLayout({
@@ -804,6 +806,9 @@ class BtopIndicator extends PanelMenu.Button {
             this._tooltip.destroy();
         }
 
+        // Reset value widget references
+        this._tooltipValueWidgets = {};
+
         const stats = this._monitor.getDetailedStats();
 
         // Create tooltip container
@@ -828,7 +833,12 @@ class BtopIndicator extends PanelMenu.Button {
         // CPU Section
         const cpuSection = this._createTooltipSection(_("CPU"));
         if (stats.cpu !== null && stats.cpu !== undefined) {
-            this._addTooltipRow(cpuSection, _("Usage"), `${stats.cpu}%`);
+            this._addTooltipRow(
+                cpuSection,
+                _("Usage"),
+                `${stats.cpu}%`,
+                "cpuUsage",
+            );
         }
         if (stats.cpuCores) {
             this._addTooltipRow(cpuSection, _("Cores"), `${stats.cpuCores}`);
@@ -838,6 +848,7 @@ class BtopIndicator extends PanelMenu.Button {
                 cpuSection,
                 _("Load Average"),
                 `${stats.loadAvg.load1.toFixed(2)} / ${stats.loadAvg.load5.toFixed(2)} / ${stats.loadAvg.load15.toFixed(2)}`,
+                "loadAvg",
             );
         }
         this._tooltip.add_child(cpuSection);
@@ -845,21 +856,29 @@ class BtopIndicator extends PanelMenu.Button {
         // Memory Section
         const memSection = this._createTooltipSection(_("Memory"));
         if (stats.memPercent !== undefined) {
-            this._addTooltipRow(memSection, _("Usage"), `${stats.memPercent}%`);
+            this._addTooltipRow(
+                memSection,
+                _("Usage"),
+                `${stats.memPercent}%`,
+                "memUsage",
+            );
             this._addTooltipRow(
                 memSection,
                 _("Used / Total"),
                 `${formatBytes(stats.memUsed)} / ${formatBytes(stats.memTotal)}`,
+                "memUsedTotal",
             );
             this._addTooltipRow(
                 memSection,
                 _("Available"),
                 formatBytes(stats.memAvailable),
+                "memAvailable",
             );
             this._addTooltipRow(
                 memSection,
                 _("Buffers / Cached"),
                 `${formatBytes(stats.memBuffers)} / ${formatBytes(stats.memCached)}`,
+                "memBuffersCached",
             );
         }
         this._tooltip.add_child(memSection);
@@ -871,11 +890,13 @@ class BtopIndicator extends PanelMenu.Button {
                 swapSection,
                 _("Usage"),
                 `${stats.swapPercent}%`,
+                "swapUsage",
             );
             this._addTooltipRow(
                 swapSection,
                 _("Used / Total"),
                 `${formatBytes(stats.swapUsed)} / ${formatBytes(stats.swapTotal)}`,
+                "swapUsedTotal",
             );
             this._tooltip.add_child(swapSection);
         }
@@ -887,11 +908,13 @@ class BtopIndicator extends PanelMenu.Button {
                 netSection,
                 _("Download"),
                 `${formatBytes(stats.netRxSpeed)}/s`,
+                "netDownload",
             );
             this._addTooltipRow(
                 netSection,
                 _("Upload"),
                 `${formatBytes(stats.netTxSpeed)}/s`,
+                "netUpload",
             );
         }
         if (stats.netRxTotal !== undefined) {
@@ -899,11 +922,13 @@ class BtopIndicator extends PanelMenu.Button {
                 netSection,
                 _("Total Received"),
                 formatBytes(stats.netRxTotal),
+                "netRxTotal",
             );
             this._addTooltipRow(
                 netSection,
                 _("Total Sent"),
                 formatBytes(stats.netTxTotal),
+                "netTxTotal",
             );
         }
         if (stats.netInterfaces && stats.netInterfaces.length > 0) {
@@ -922,7 +947,12 @@ class BtopIndicator extends PanelMenu.Button {
         // Uptime Section
         if (stats.uptime) {
             const uptimeSection = this._createTooltipSection(_("System"));
-            this._addTooltipRow(uptimeSection, _("Uptime"), stats.uptime);
+            this._addTooltipRow(
+                uptimeSection,
+                _("Uptime"),
+                stats.uptime,
+                "uptime",
+            );
             this._tooltip.add_child(uptimeSection);
         }
 
@@ -946,6 +976,92 @@ class BtopIndicator extends PanelMenu.Button {
         }
 
         this._tooltip.set_position(Math.round(tooltipX), panelHeight + 5);
+
+        // Start live update timer for tooltip
+        this._startTooltipUpdates();
+    }
+
+    _startTooltipUpdates() {
+        // Stop any existing timer
+        this._stopTooltipUpdates();
+
+        // Update tooltip at the same rate as the main display
+        const refreshRate = this._settings.get_int("refresh-rate");
+        this._tooltipUpdateTimer = GLib.timeout_add(
+            GLib.PRIORITY_DEFAULT,
+            refreshRate,
+            () => {
+                this._updateTooltipValues();
+                return GLib.SOURCE_CONTINUE;
+            },
+        );
+    }
+
+    _stopTooltipUpdates() {
+        if (this._tooltipUpdateTimer) {
+            GLib.source_remove(this._tooltipUpdateTimer);
+            this._tooltipUpdateTimer = null;
+        }
+    }
+
+    _updateTooltipValues() {
+        // Check if tooltip is still visible
+        if (!this._tooltip) {
+            this._stopTooltipUpdates();
+            return;
+        }
+
+        const stats = this._monitor.getDetailedStats();
+        const w = this._tooltipValueWidgets;
+
+        // Update CPU values
+        if (w.cpuUsage && stats.cpu !== null && stats.cpu !== undefined) {
+            w.cpuUsage.text = `${stats.cpu}%`;
+        }
+        if (w.loadAvg && stats.loadAvg) {
+            w.loadAvg.text = `${stats.loadAvg.load1.toFixed(2)} / ${stats.loadAvg.load5.toFixed(2)} / ${stats.loadAvg.load15.toFixed(2)}`;
+        }
+
+        // Update Memory values
+        if (w.memUsage && stats.memPercent !== undefined) {
+            w.memUsage.text = `${stats.memPercent}%`;
+        }
+        if (w.memUsedTotal && stats.memUsed !== undefined) {
+            w.memUsedTotal.text = `${formatBytes(stats.memUsed)} / ${formatBytes(stats.memTotal)}`;
+        }
+        if (w.memAvailable && stats.memAvailable !== undefined) {
+            w.memAvailable.text = formatBytes(stats.memAvailable);
+        }
+        if (w.memBuffersCached && stats.memBuffers !== undefined) {
+            w.memBuffersCached.text = `${formatBytes(stats.memBuffers)} / ${formatBytes(stats.memCached)}`;
+        }
+
+        // Update Swap values
+        if (w.swapUsage && stats.swapPercent !== undefined) {
+            w.swapUsage.text = `${stats.swapPercent}%`;
+        }
+        if (w.swapUsedTotal && stats.swapUsed !== undefined) {
+            w.swapUsedTotal.text = `${formatBytes(stats.swapUsed)} / ${formatBytes(stats.swapTotal)}`;
+        }
+
+        // Update Network values
+        if (w.netDownload && stats.netRxSpeed !== undefined) {
+            w.netDownload.text = `${formatBytes(stats.netRxSpeed)}/s`;
+        }
+        if (w.netUpload && stats.netTxSpeed !== undefined) {
+            w.netUpload.text = `${formatBytes(stats.netTxSpeed)}/s`;
+        }
+        if (w.netRxTotal && stats.netRxTotal !== undefined) {
+            w.netRxTotal.text = formatBytes(stats.netRxTotal);
+        }
+        if (w.netTxTotal && stats.netTxTotal !== undefined) {
+            w.netTxTotal.text = formatBytes(stats.netTxTotal);
+        }
+
+        // Update Uptime
+        if (w.uptime && stats.uptime) {
+            w.uptime.text = stats.uptime;
+        }
     }
 
     _createTooltipSection(title) {
@@ -963,7 +1079,7 @@ class BtopIndicator extends PanelMenu.Button {
         return section;
     }
 
-    _addTooltipRow(section, label, value) {
+    _addTooltipRow(section, label, value, key = null) {
         const row = new St.BoxLayout({
             style_class: "btop-tooltip-row",
         });
@@ -981,10 +1097,18 @@ class BtopIndicator extends PanelMenu.Button {
         });
         row.add_child(valueWidget);
 
+        // Store reference for live updates if key provided
+        if (key) {
+            this._tooltipValueWidgets[key] = valueWidget;
+        }
+
         section.add_child(row);
     }
 
     _hideTooltip() {
+        this._stopTooltipUpdates();
+        this._tooltipValueWidgets = {};
+
         if (this._tooltip) {
             Main.layoutManager.removeChrome(this._tooltip);
             this._tooltip.destroy();
