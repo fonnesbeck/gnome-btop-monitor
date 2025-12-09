@@ -35,3 +35,60 @@
 .btop-monitor-critical {
     color: #e74c3c;
 }
+
+/* Tooltip Styles */
+.btop-tooltip {
+    background-color: rgba(40, 40, 40, 0.95);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    min-width: 220px;
+}
+
+.btop-tooltip-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.btop-tooltip-separator {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 8px;
+}
+
+.btop-tooltip-section {
+    margin-bottom: 10px;
+}
+
+.btop-tooltip-section:last-child {
+    margin-bottom: 0;
+}
+
+.btop-tooltip-section-header {
+    font-size: 11px;
+    font-weight: bold;
+    color: #8be9fd;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btop-tooltip-row {
+    padding: 2px 0;
+}
+
+.btop-tooltip-label {
+    font-size: 12px;
+    color: #cccccc;
+    margin-right: 12px;
+}
+
+.btop-tooltip-value {
+    font-size: 12px;
+    color: #ffffff;
+    font-weight: 500;
+}
