@@ -1,4 +1,4 @@
-# Btop Monitor - GNOME Shell Extension
+# System Monitor & `btop` Launcher - GNOME Shell Extension
 
 A GNOME Shell extension that displays system resource usage (CPU, Memory, Swap, or Load Average) in the top bar with color-coded indicators. Click on the indicator to launch btop in your preferred terminal.
 
@@ -94,11 +94,11 @@ Open the extension preferences using one of these methods:
 
 ## Screenshots
 
-```
-[CPU 23%]  - Normal (white)
-[CPU 54%]  - Moderate (yellow)
-[CPU 87%]  - Heavy (red)
-```
+### Btop System Monitor
+![Btop](screenshots/btop.png)
+
+### Hover Tooltip
+![Hover Tooltip](screenshots/hover.png)
 
 ## Development
 

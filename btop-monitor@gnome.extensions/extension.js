@@ -38,6 +38,15 @@ const ICON_NAMES = {
 
 // Format bytes per second to human readable with fixed width
 function formatSpeed(bytesPerSec) {
+    if (
+        bytesPerSec === null ||
+        bytesPerSec === undefined ||
+        isNaN(bytesPerSec)
+    ) {
+        return "    0B";
+    }
+    bytesPerSec = Number(bytesPerSec);
+
     let num;
     let unit;
 
@@ -75,13 +84,15 @@ const TERMINAL_COMMANDS = [
 
 // Format bytes to human readable (KB, MB, GB, TB)
 function formatBytes(bytes) {
-    if (bytes < 1024) return `${bytes} B`;
+    if (bytes === null || bytes === undefined || isNaN(bytes)) return "0 B";
+    bytes = Number(bytes);
+    if (bytes < 1024) return `${Math.round(bytes)} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     if (bytes < 1024 * 1024 * 1024)
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     if (bytes < 1024 * 1024 * 1024 * 1024)
         return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-    return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(2)} TB`;
+    return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`;
 }
 
 class SystemMonitor {
@@ -847,7 +858,7 @@ class BtopIndicator extends PanelMenu.Button {
             this._addTooltipRow(
                 cpuSection,
                 _("Load Average"),
-                `${stats.loadAvg.load1.toFixed(2)} / ${stats.loadAvg.load5.toFixed(2)} / ${stats.loadAvg.load15.toFixed(2)}`,
+                `${stats.loadAvg.load1.toFixed(1)} / ${stats.loadAvg.load5.toFixed(1)} / ${stats.loadAvg.load15.toFixed(1)}`,
                 "loadAvg",
             );
         }
@@ -1019,7 +1030,7 @@ class BtopIndicator extends PanelMenu.Button {
             w.cpuUsage.text = `${stats.cpu}%`;
         }
         if (w.loadAvg && stats.loadAvg) {
-            w.loadAvg.text = `${stats.loadAvg.load1.toFixed(2)} / ${stats.loadAvg.load5.toFixed(2)} / ${stats.loadAvg.load15.toFixed(2)}`;
+            w.loadAvg.text = `${stats.loadAvg.load1.toFixed(1)} / ${stats.loadAvg.load5.toFixed(1)} / ${stats.loadAvg.load15.toFixed(1)}`;
         }
 
         // Update Memory values
