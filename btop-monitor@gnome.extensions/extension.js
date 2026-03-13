@@ -30,9 +30,9 @@ const TEXT_LABELS = {
 
 // Symbolic icon names for monitor types
 const ICON_NAMES = {
-    cpu: "org.gnome.SystemMonitor-symbolic",
-    memory: "drive-harddisk-solidstate-symbolic",
-    swap: "drive-harddisk-system-symbolic",
+    cpu: "power-profile-performance-symbolic",
+    memory: "resources-symbolic",
+    swap: "view-refresh-symbolic",
     net: "network-wired-symbolic",
 };
 
